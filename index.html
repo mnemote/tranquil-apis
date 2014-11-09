@@ -2,17 +2,56 @@
   <head>
     <title>Tranquil APIs</title>
     <style type="text/css">
-        body { font-family: Verdana, sans; }
-        h1 { text-align: center; }
-        pre { border: 1px solid grey; }
+        @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro|Oxygen+Mono|Bitter:400,700);
+        body { font-family: "Source Sans Pro", Verdana, sans-serif; margin: 0}
+        h1, h2, h3, h4 { font-family: Bitter, Impact, sans-serif; font-weight: 400 }
+        h1 { text-align: center; font-weight: 700; margin-top: 0;}
+        pre { display: block; padding: 10px; border: 1px dotted grey;  background-color: #DDD; margin: 5%; }
+        body, #wrapper { height: 100%; overflow: none;  }
+        #index { position: fixed; height: 100%; width: 20%; border-right: 1px dotted grey; background-color: #DDD;}
+        #content { margin-left: 20%; padding-left: 20px; padding-right: 20px }
     </style>
   </head>
 
   <body>
-    <h1>Tranquil v0.1</h1>
 
 
-<h2>Introduction</h2>
+<div id="wrapper">
+<div id="index">
+  <h1>Tranquil v0.1.1</h1>
+  <ul>
+    <li><a href="#intro">Introduction</a></li>
+    <li><a href="#requests">Requests</a></br>
+      <ul>
+        <li><a href="#contexts">Contexts</a></li>
+        <li><a href="#actions">Actions</a></li>
+        <li><a href="#returns">Returning Data</a></li>
+        <li><a href="#action_lists">Action Lists</a></li>
+        <li><a href="#action_groups">Action Groups</a><br/>
+          <ul>
+            <li><a href="#nesting_action_groups">... Nesting</a></li>
+            <li><a href="#composing_action_groups">... Composing</a></li>
+          </ul></li>
+        <li><a href="#writing_with_actions">Writing with Actions</a></li>
+        <li><a href="#transactions">Transactions</a></li>
+      </ul></li>
+    <li><a href="#transport_encoding">Transport &amp; Encoding</a></br>
+      <ul>
+        <li><a href="#http_post_json">HTTP POST and JSON</a><br/>
+          <ul>
+            <li><a href="#vanilla_javascript">Using from Javascript</a></li>
+            <li><a href="#using_from_jquery">Using from jQuery</a></li>
+          </ul></li>
+        <li><a href="#other_encodings">Other Encodings</a></li>
+        <li><a href="#other_transports">Other Transports</a></li>
+      </ul></li>
+    <li><a href="#implementations">Implementations</a></li>
+    <li><a href="#intellectual_property">Intellectual Property</a></li>
+  </ul>
+</div>
+
+<div id="content">
+<h2 id="intro">Introduction</h2>
 
 <p><em>Tranquil</em> is a protocol framework which helps define the communication
 between web client and server.
@@ -25,6 +64,8 @@ however:</p>
 <ul>
 <li>Tranquil is transport agnostic.</li>
 <li>Tranquil allows multiple queries per request.</li>
+<li>Tranquil actions are not limited to <a href="http://en.wikipedia.org/wiki
+/Create,_read,_update_and_delete">CRUD</a></li>
 <li>Tranquil actions are composable and extensible.</li>
 </ul>
 
@@ -34,11 +75,12 @@ entities and less on methods, with the intention of reducing the
 proliferation of custom methods.</p>
 
 
-<h2>Requests</h2>
+<h2 id="requests">Requests</h2>
 
 <p>Tranquil requests can contain multiple queries, encoded into a single
 datastructure which describes what operations to perform and what data
 is to be returned.</p>
+
 <p>By standardizing the form of requests, front-end developers are able to
 adjust for their own requirements and back-end developers can enforce
 uniform business rules across all requests.  By encoding requests as
@@ -46,7 +88,7 @@ JSON (etc) data structures, issues of parsing and encoding queries are
 eliminated.</p>
 
 
-<h3>Context</h3>
+<h3 id="contexts">Context</h3>
 
 <p>A <em>context</em> describes a group of resources.
 For example, a context could be "all users" or "all active users"
@@ -59,10 +101,9 @@ those resources than the context
 for an administrator user.</p>
 
 
-<h3>Actions</h3>
+<h3 id="actions">Actions</h3>
 
-<p><em>Actions</em> transform contexts into other contexts
-<strong>OR</strong> into data which is returned in the response.
+<p><em>Actions</em> transform contexts into other contexts.
 For example, the "all users" context could be transformed into
 the "users over 35" context using a "filter" action.</p>
 
@@ -72,9 +113,6 @@ but actions may also include more complex operations such as
 <a href="http://en.wikipedia.org/wiki/MapReduce">Map, Reduce</a>
 and <a href="http://en.wikipedia.org/wiki/Atomic_(computer_science)">Atomic</a>
 increments, appends and so on.</p>
-
-<p>Not all actions return a new context: some may produce
-data for return to the client.</p>
 
 <p>An action is represented as a list of an <em>action_name</em>
 and some <em>parameters</em>.  Parameters can be any data type,
@@ -99,10 +137,18 @@ as plain strings.</em></p>
 [ "filter", { "is_active": true } ]
 </pre>
 
+<h3 id="returns">Returning Data</h3>
 
-<h3>Action Lists</h3>
+<p>Contexts can return data in any appropriate format and with whatever
+level of detail is appropriate.  For example, the context returned by
+a "filter" action might serialize all data, but the context returned
+by a "ids_only" action might serialize only the IDs of matched objects.</p>
 
-<p>An <em>action list</em> is a list of actions, which compose left to right.</p>
+
+<h3 id="action_lists">Action Lists</h3>
+
+<p>An <em>action list</em> is a list of actions, which compose left to right.The context returned by each action is passed to the next.  Only the 
+final context can serialize data for return.</p>
 
 <p>Example action_lists:</p>
 
@@ -117,7 +163,7 @@ to make a new context, then the number of records in the context
 are counted and the count is returned.</p>
 
 
-<h3>Action Groups</h3>
+<h3 id="action_groups">Action Groups</h3>
 
 <p>An <em>action group</em> labels actions and runs them in parallel in the
 same context.
@@ -153,7 +199,7 @@ conveniently refer to <tt>response.count</tt> and <tt>response.page[n]</tt>
 from javascript.</p>
 
 
-<h4>Nesting Action Groups</h4>
+<h4 id="nesting_action_groups">Nesting Action Groups</h4>
 
 <p>Action groups nest:</p>
 
@@ -175,10 +221,26 @@ from javascript.</p>
 
 <p>will return <tt>authors.count</tt> and <tt>authors.top10</tt>.</p>
 
+<p>Action Groups may be performed in any order or in parallel,
+and so in a request like:</p>
 
-<h4>Composing Action Groups</h4>
+<pre>
+[
+    "users",
+    {
+        "create": [ "create", { "name": "Alice" } ],
+        "create": [ "create", { "name": "Bob" } ],
+        "count": "count"
+    }
+]
+</pre>
 
-<p>Composable action groups:</p>
+<p>... the returned "count" could be either the old, intermediate or new count.</p>
+
+
+<h4 id="composing_action_groups">Composing Action Groups</h4>
+
+<p>Action groups are composable:</p>
 
 <pre>
 {
@@ -205,11 +267,12 @@ in the second action group and thus return
 <tt>authors.male.count</tt> and <tt>authors.female.count</tt> and
 <tt>authors.male.top10</tt> and <tt>authors.female.top10</tt>.</p>
 
-<p><em>This may not prove to be all that useful and implementations may
-choose to not support it.</em></p>
+<p><em>NOTE: This may not prove to be all that useful and implementations may
+choose to not support Action Groups anywhere but the last Action
+in an Action List.</em></p>
 
 
-<h3>Writing with Actions</h3>
+<h3 id="writing_with_actions">Writing with Actions</h3>
 
 <p>The examples above are all read-only actions.  Actions may also
 mutate database state.  Operations apply to all resources in the
@@ -225,11 +288,13 @@ current context:</p>
 
 <p>Mutating actions aren't limited to Create, Update and Delete.
 For example, actions could be defined for Increment, Append,
-Shuffle, Swap.  Mutating actions can also return data, allowing
-for safe appends and increments and so on.</p>
+Shuffle, Swap.  Actions which create or update entities should
+return a context which allows the protocol to perform further
+actions on those records.  Contexts returned by mutating actions can also
+return data, allowing for safe appends and increments and so on.</p>
 
 
-<h3>Transactions</h3>
+<h3 id="transactions">Transactions</h3>
 
 <p>Where possible, the whole query should be handled in a single
 database transaction, which should be rolled back if any part fails.  As
@@ -241,12 +306,12 @@ contains a mutating action should have its own transaction, so
 that the results of the mutation are visible from subsequent actions
 in that action list but not from other action lists.</p>
 
-<h2>Transport &amp; Encoding</h2>
+<h2 id="transport_encoding">Transport &amp; Encoding</h2>
 
 <p>Tranquil is transport- and encoding-agnostic.</p>
 
 
-<h3>HTTP POST and JSON</h3>
+<h3 id="http_post_json">HTTP POST and JSON</h3>
 
 <p>Typically, requests are encoded as JSON and transported in the body of
 HTTP POST requests:</p>
@@ -274,10 +339,15 @@ Content-Type: application/json
 <tt>400 Bad Request</tt> is returned.  Other error codes may be returned
 for other issues.</p>
 
-<p>A single URL endpoint is used for all contexts.  Keeping the message
+<p>For a database containing multiple collections of entities, a 
+"Root Context" is used to select between collections.  This context
+has one action per collection.  This allows a single Tranquil request
+to access multiple collections.</p>
+
+<p>A single URL endpoint is used for each root context.  Keeping the message
 details out of the URL simplifies request encoding.</p>
 
-<h4>Using from vanilla javascript</h4>
+<h4 id="vanilla_javascript">Using from vanilla javascript</h4>
 
 <p>A very simple example which doesn't need any external libraries or
 frameworks (but has no error handling):</p>
@@ -305,7 +375,7 @@ tranquil_request(
 </pre>
 
 
-<h4>Using from jQuery</h4>
+<h4 id="using_from_jquery">Using from jQuery</h4>
 
 <p>Using <a href="http://api.jquery.com/jQuery.ajax/">jQuery's AJAX function</a>:</p>
 
@@ -326,7 +396,7 @@ $.ajax({
 });
 </pre>
 
-<h3>Other Encodings</h3>
+<h3 id="other_encodings">Other Encodings</h3>
 
 <p>The above examples are all in JSON, but
 <a href="https://code.google.com/p/protobuf/">ProtoBuf</a> /
@@ -340,7 +410,7 @@ if there was a need to do so.</p>
 should use the HTTP <tt>Content-Type</tt> and <tt>Accept</tt> headers to decide
 which encoding is appropriate for requests and responses.</p>
 
-<h3>Other Transports</h3>
+<h3 id="other_transports">Other Transports</h3>
 
 <p>Tranquil is transport-agnostic, so transport could be by
 <a href="http://websocket.org/">WebSockets</a>, <a href="http://amqp.org/">AMQP</a>
@@ -350,7 +420,7 @@ or <a href="http://www.ietf.org/rfc/rfc1149.txt">avian carrier</a>.</p>
 and encodings to allow for access from multiple platforms or for
 backwards compatibility.</p>
 
-<h2>Implementation</h2>
+<h2 id="implementations">Implementation</h2>
 
 <p>Reference implementations are in progress ... see
 <a href="https://github.com/nickzoic/tranquil/">Tranquil on Github</a></p>
@@ -358,11 +428,13 @@ backwards compatibility.</p>
 <p>They are not very advanced yet and contributions for these and
 other platforms are welcomed!</p>
 
-<h2>Intellectual Property</h2>
+<h2 id="intellectual_property">Intellectual Property</h2>
 
-<p>At present, this document is &copy; 2014 Mnemote Pty Ltd, and all rights are reserved.</p>
+<p>At present, this document is &copy; 2014 <a href="http://mnemote.com/">Mnemote Pty Ltd</a>, and all rights are reserved.</p>
 
 <p>The intention going forward is to standardize Tranquil APIs through an appropriate working group
-and then assign the IP to the Internet Society or equivalent.</p>
+and then assign the IP to the <a href="http://internetsociety.org">Internet Society</a> or equivalent.</p>
+  </div>
+</div>
   </body>
 </html>
